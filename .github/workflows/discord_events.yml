@@ -7,6 +7,9 @@ on:
   
 jobs:
   test:
+    env: 
+      GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      DISCORD_TOKEN: ${{ secrets.DISCORD_TOKEN }}
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v3
