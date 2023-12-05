@@ -12,8 +12,7 @@ jobs:
       - uses: actions/checkout@v3
       - uses: actions/setup-node@v4
         with:
-          node-version: 12
+          node-version: 20
       - run: |
-          npm install discord.js
-          npm install octokit
+          npm ci
           echo ${{ github.event}} | node index.js
