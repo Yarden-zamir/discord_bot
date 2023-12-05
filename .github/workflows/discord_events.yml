@@ -19,6 +19,5 @@ jobs:
       - run: |
           npm install discord.js
           npm install octokit
-          
-#          echo ${{ github.event}} > payload.json
+          #          echo ${{ github.event}} > payload.json
           node index.js
