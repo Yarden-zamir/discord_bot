@@ -16,9 +16,10 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version: 20
-      - run: |
+      - env:
+          GITHUB_CONTEXT: ${{ toJson(github) }}
+        run: |
           npm install discord.js
           npm install octokit
-          echo ${{ toJson(github) }}
-          echo ${{ toJson(github) }} > ./payload.json
+          echo "$GITHUB_CONTEXT" > ./payload.json
           node index.js
