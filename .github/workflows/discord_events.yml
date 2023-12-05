@@ -1,0 +1,12 @@
+name: Discord events
+
+on:
+  issues
+
+  schedule:
+      - cron: '*/5 * * * *'
+
+jobs:
+  update_sde:
+    runs-on: sde-generic
+    env:
