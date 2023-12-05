@@ -1,20 +1,23 @@
 // Require the necessary discord.js classes
 const { Client, Events, GatewayIntentBits } = require('discord.js');
 const token = process.env.DISCORD_TOKEN
+const readline = require('readline');
 
 //
 const { Octokit, App } = require("octokit");
+const { exit } = require('process');
 
 // const app = new App({ appId, privateKey });
 
-// if stdin then this is a github event from gh actions
-process.stdin.on("data", data => {
-    data = data.toString().toUpperCase()
-    process.stdout.write(data + "\n")
-    console.log("Assuming we got a payload from github")
-    console.log(JSON.stringify(data))
-    process.exit(0)
-})
+// if payload file is present
+try{
+    const payload = require("./payload.json");
+    console.log(JSON.stringify(payload))
+    exit(0)
+}
+catch (e) {
+    console.log("No payload file found, running bot server only")
+}
 // for await (const { octokit, repository } of app.eachRepository.iterator()) {
 //     // https://docs.github.com/en/rest/reference/repos#create-a-repository-dispatch-event
 //     await octokit.rest.repos.createDispatchEvent({
