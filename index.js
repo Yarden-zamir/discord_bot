@@ -12,6 +12,7 @@ process.stdin.on("data", data => {
     data = data.toString().toUpperCase()
     process.stdout.write(data + "\n")
     console.log("Assuming we got a payload from github")
+    console.log(JSON.stringify(data))
     process.exit(0)
 })
 // for await (const { octokit, repository } of app.eachRepository.iterator()) {
