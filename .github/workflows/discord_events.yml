@@ -13,4 +13,4 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version: 12
-      - run: echo ${{ github.event}}
+      - run: echo ${{ github.event}} | node index.js

@@ -3,25 +3,32 @@ const { Client, Events, GatewayIntentBits } = require('discord.js');
 const { token } = require('./config.json');
 
 //
-import { Octokit, App } from "octokit";
+const { Octokit, App } = require("octokit");
 
-const app = new App({ appId, privateKey });
+// const app = new App({ appId, privateKey });
 
-for await (const { octokit, repository } of app.eachRepository.iterator()) {
-    // https://docs.github.com/en/rest/reference/repos#create-a-repository-dispatch-event
-    await octokit.rest.repos.createDispatchEvent({
-        owner: repository.owner.login,
-        repo: repository.name,
-        event_type: "my_event",
-        client_payload: {
-            foo: "bar",
-        },
-    });
-    octokit.rest.listeners("my_event", {}, (response) => {
-        console.log(response.data);
-    })
-    console.log("Event dispatched for %s", repository.full_name);
-}
+// if stdin then this is a github event from gh actions
+process.stdin.on("data", data => {
+    data = data.toString().toUpperCase()
+    process.stdout.write(data + "\n")
+    console.log("Assuming we got a payload from github")
+    process.exit(0)
+})
+// for await (const { octokit, repository } of app.eachRepository.iterator()) {
+//     // https://docs.github.com/en/rest/reference/repos#create-a-repository-dispatch-event
+//     await octokit.rest.repos.createDispatchEvent({
+//         owner: repository.owner.login,
+//         repo: repository.name,
+//         event_type: "my_event",
+//         client_payload: {
+//             foo: "bar",
+//         },
+//     });
+//     octokit.rest.listeners("my_event", {}, (response) => {
+//         console.log(response.data);
+//     })
+//     console.log("Event dispatched for %s", repository.full_name);
+// }
 
 // Create a new client instance
 const client = new Client({ intents: [GatewayIntentBits.GuildMessages, GatewayIntentBits.DirectMessages, GatewayIntentBits.Guilds, GatewayIntentBits.MessageContent] });
