@@ -10,13 +10,17 @@ const { exit } = require('process');
 // const app = new App({ appId, privateKey });
 
 // if payload file is present
+let payload
 try{
-    const payload = require("./payload.json");
+    payload = require("./payload.json");
     console.log(JSON.stringify(payload))
-    exit(0)
 }
 catch (e) {
-    console.log("No payload file found, running bot server only")
+        console.log("No payload file found, running bot server only")
+}
+if (payload){
+    console.log(payload.event.action)
+    exit(0)
 }
 // for await (const { octokit, repository } of app.eachRepository.iterator()) {
 //     // https://docs.github.com/en/rest/reference/repos#create-a-repository-dispatch-event
