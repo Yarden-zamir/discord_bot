@@ -109,10 +109,12 @@ if (payload) {
   }
   if (payload.event.action === "opened") {
     client.once(Events.ClientReady, (readyClient) => {
-      let channel = readyClient.channels.cache.get(env.DISCORD_INPUT_FORUM_CHANNEL_ID);
+      let channel = readyClient.channels.cache.get(
+        env.DISCORD_INPUT_FORUM_CHANNEL_ID
+      );
       console.log(`New issue ${channel}`);
       let newMessage = {
-        content: `\`synced with issue #${payload.event.issue.number}\``,
+        content: `\`synced with issue #${payload.event.issue.number}\` [follow on github](${payload.event.issue.html_url})`,
         embeds: [
           {
             title: `#${payload.event.issue.number} ${payload.event.issue.title}`,
@@ -144,26 +146,69 @@ if (payload) {
       GatewayIntentBits.MessageContent,
     ],
   });
+  client.on(Events.MessageCreate, async (newMessage) => {
+    const octokit = new Octokit({
+      auth: env.GITHUB_TOKEN,
+    });
+    if (newMessage.channelId !== env.DISCORD_INPUT_FORUM_CHANNEL_ID) return;
+    newMessage.channel.fetchStarterMessage().then(async (starterMessage) => {
+      if (newMessage.id !== starterMessage.id) {
+        //ffs there is a bug that means that message.channel returns the parent channel, not the thread, so I have to do this
+        //find issue index if there is one
+        let issueNumber;
+        newMessage.channel.messages.fetch().then((messages) => {
+          messages.forEach((message) => {
+            if (
+              message.author.bot ||
+              message.author.username === env.DISCORD_ADMIN_USERNAME //need to figure out a way to check if admin instead
+            ) {
+              if (message.cleanContent.includes("`synced with issue #")) {
+                issueNumber = message.cleanContent
+                  .split("#")
+                  .pop()
+                  .split("`")[0];
+
+                newMessage.author.avatarURL();
+                console.log(issueNumber);
+
+                content = `[<img src="${newMessage.author.avatarURL()}" width="15" height="15" center=true/> **${
+                  newMessage.author.username
+                }** on Discord says](${newMessage.url}) \n> ${
+                  newMessage.content
+                }`;
+                octokit.rest.issues.createComment({
+                  owner: env.TARGET_REPO.split("/")[0],
+                  repo: env.TARGET_REPO.split("/")[1],
+                  body: content,
+                  issue_number: issueNumber,
+                });
+              }
+            }
+          });
+        });
+      }
+    });
+  });
   client.on(Events.ThreadCreate, async (thread) => {
     console.log("thread created");
-    thread.fetchStarterMessage().then(async(message) => {  
-        if (message.channel.parentId !== "1181557817749020682") return;
-        if (message.author.bot) return;
-        if (message.content.startsWith("`synced with issue #")) return;
-        console.log(
-          `Message received ${message.content} ${message.channel.parentId}`
-        );
-        const octokit = new Octokit({
-          auth: env.GITHUB_TOKEN,
-        });
-    
-        const issue = await octokit.rest.issues.create({
-          owner: env.TARGET_REPO.split("/")[0],
-          repo: env.TARGET_REPO.split("/")[1],
-          title: message.channel.name,
-          body: message.content,
-          labels: ["synced-with-discord"],
-        });
+    thread.fetchStarterMessage().then(async (message) => {
+      if (message.channel.parentId !== "1181557817749020682") return;
+      if (message.author.bot) return;
+      if (message.content.startsWith("`synced with issue #")) return;
+      console.log(
+        `Message received ${message.content} ${message.channel.parentId}`
+      );
+      const octokit = new Octokit({
+        auth: env.GITHUB_TOKEN,
+      });
+
+      const issue = await octokit.rest.issues.create({
+        owner: env.TARGET_REPO.split("/")[0],
+        repo: env.TARGET_REPO.split("/")[1],
+        title: message.channel.name,
+        body: message.content,
+        labels: ["synced-with-discord"],
+      });
     });
   });
   client.login(token);
