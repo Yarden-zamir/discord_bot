@@ -109,32 +109,35 @@ if (payload) {
   }
   if (payload.event.action === "opened") {
     client.once(Events.ClientReady, (readyClient) => {
-      let channel = readyClient.channels.cache.get(
-        env.DISCORD_INPUT_FORUM_CHANNEL_ID
-      );
-      console.log(`New issue ${channel}`);
-      let newMessage = {
-        content: `\`synced with issue #${payload.event.issue.number}\` [follow on github](${payload.event.issue.html_url})`,
-        embeds: [
-          {
-            title: `#${payload.event.issue.number} ${payload.event.issue.title}`,
-            description: payload.event.issue.body,
-            url: payload.event.issue.html_url,
-            color: parseInt(getRandomColor(payload.event.issue.user.login), 16),
-            author: {
-              name: payload.event.issue.user.login,
-              icon_url: payload.event.issue.user.avatar_url,
-              url: payload.event.issue.user.html_url,
-            },
-          },
-        ],
-      };
-
-      channel.threads.create({
-        name: payload.event.issue.title,
-        message: newMessage,
-      });
-      client.destroy();
+      let channel = readyClient.channels
+        .fetch(env.DISCORD_INPUT_FORUM_CHANNEL_ID)
+        .then((channel) => {
+          console.log(`New issue ${channel}`);
+          let newMessage = {
+            content: `\`synced with issue #${payload.event.issue.number}\` [follow on github](${payload.event.issue.html_url})`,
+            embeds: [
+              {
+                title: `#${payload.event.issue.number} ${payload.event.issue.title}`,
+                description: payload.event.issue.body,
+                url: payload.event.issue.html_url,
+                color: parseInt(
+                  getRandomColor(payload.event.issue.user.login),
+                  16
+                ),
+                author: {
+                  name: payload.event.issue.user.login,
+                  icon_url: payload.event.issue.user.avatar_url,
+                  url: payload.event.issue.user.html_url,
+                },
+              },
+            ],
+          };
+          channel.threads.create({
+            name: payload.event.issue.title,
+            message: newMessage,
+          });
+          client.destroy();
+        });
     });
   }
 } else {
@@ -192,7 +195,8 @@ if (payload) {
   client.on(Events.ThreadCreate, async (thread) => {
     console.log("thread created");
     thread.fetchStarterMessage().then(async (message) => {
-      if (message.channel.parentId !== "1181557817749020682") return;
+      if (message.channel.parentId !== env.DISCORD_INPUT_FORUM_CHANNEL_ID)
+        return;
       if (message.author.bot) return;
       if (message.content.startsWith("`synced with issue #")) return;
       console.log(
