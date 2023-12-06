@@ -109,7 +109,8 @@ if (payload) {
   }
   if (payload.event.action === "opened") {
     client.once(Events.ClientReady, (readyClient) => {
-      let channel = readyClient.channels
+      console.log("client ready with channel "+ env.DISCORD_INPUT_FORUM_CHANNEL_ID);
+      readyClient.channels
         .fetch(env.DISCORD_INPUT_FORUM_CHANNEL_ID)
         .then((channel) => {
           console.log(`New issue ${channel}`);
