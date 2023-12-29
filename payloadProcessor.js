@@ -13,7 +13,7 @@ function newComment(client, issue, comment) {
   if (comment.user.login === "Discord-Github-Bridge") {
     console.log("comment by bot, ignoring");
     client.once(Events.ClientReady, async (readyClient) => {
-      client.destroy();
+      readyClient.destroy();
       return;
     });
   }
