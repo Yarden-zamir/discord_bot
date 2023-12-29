@@ -85,8 +85,9 @@ function shouldSyncMessage(message, issueNumber) {
 
 // Function to check if a message is from an admin
 function isMessageFromAdmin(message) {
-  return message.author.username === env.DISCORD_ADMIN_USERNAME;
-  // Further implementation needed to check admin status
+  return (
+    message.author.bot || message.member.permissions.has("MANAGE_CHANNELS")
+  );
 }
 
 // Function to create the message payload
