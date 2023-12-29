@@ -16,7 +16,7 @@ function newComment(client, issue, comment) {
   if (!synced) {
     //add label
     const octokit = new Octokit({ auth: env.GITHUB_TOKEN });
-    octokit.issues.addLabels({
+    octokit.rest.issues.addLabels({
       owner: env.GITHUB_OWNER,
       repo: env.GITHUB_REPO,
       issue_number: issue.number,
@@ -121,7 +121,7 @@ function process(payload) {
     console.log("here");
     createNewPost(client, payload);
     const octokit = new Octokit({ auth: env.GITHUB_TOKEN });
-    octokit.issues.addLabels({
+    octokit.rest.issues.addLabels({
       owner: env.GITHUB_OWNER,
       repo: env.GITHUB_REPO,
       issue_number: payload.event.issue.number,
