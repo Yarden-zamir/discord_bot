@@ -192,26 +192,3 @@ function createNewPost(client, payload) {
   });
 }
 module.exports = { process };
-
-/**
- * @param {Message} inputMessage
- * @returns {Array[Number]} syncedIssues
- */
-async function getSyncedIssues(inputMessage) {
-  let syncedIssues = [];
-  let messages = await inputMessage.channel.messages.fetch();
-  messages.forEach((message) => {
-    if (
-      message.author.bot ||
-      message.member.permissions.has("MANAGE_CHANNELS")
-    ) {
-      if (message.cleanContent.includes("`synced with issue #")) {
-        syncedIssues.push(
-          parseInt(message.cleanContent.split("#").pop().split("`")[0])
-        );
-      }
-    }
-  });
-  console.log(syncedIssues);
-  return syncedIssues;
-}
