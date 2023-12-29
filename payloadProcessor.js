@@ -14,8 +14,8 @@ function newComment(client, issue, comment) {
     console.log("comment by bot, ignoring");
     client.once(Events.ClientReady, async (readyClient) => {
       readyClient.destroy();
-      return;
     });
+    return;
   }
   let synced = false;
   if (issue.labels.find((label) => label.name === "synced-with-discord"))
