@@ -11,9 +11,9 @@ const { getRandomColor } = require("./utils.js");
 function newComment(client, issue, comment) {
   // Check if the issue is already synced with Discord
   if (comment.user.login === "Discord-Github-Bridge") {
-    client.destroy()
+    client.destroy();
     return;
-  };
+  }
   let synced = false;
   if (issue.labels.find((label) => label.name === "synced-with-discord"))
     synced = true;
@@ -128,13 +128,30 @@ function process(payload) {
   if (payload.event.action === "opened") {
     const client = startClient(token);
     const octokit = new Octokit({ auth: env.GITHUB_TOKEN });
-    octokit.rest.issues.addLabels({
-      owner: env.TARGET_REPO.split("/")[0],
-      repo: env.TARGET_REPO.split("/")[1],
-      issue_number: payload.event.issue.number,
-      labels: ["synced-with-discord"],
-    });
-    createNewPost(client, payload);
+    let labels = octokit.rest.issues
+      .get({
+        owner: env.TARGET_REPO.split("/")[0],
+        repo: env.TARGET_REPO.split("/")[1],
+        issue_number: payload.event.issue.number,
+      })
+      .then((issue) => {
+        if (
+          issue.data.labels.find(
+            (label) => label.name === "synced-with-discord"
+          )
+        ) {
+          console.log("issue already synced");
+          client.destroy();
+          return;
+        }
+        octokit.rest.issues.addLabels({
+          owner: env.TARGET_REPO.split("/")[0],
+          repo: env.TARGET_REPO.split("/")[1],
+          issue_number: payload.event.issue.number,
+          labels: ["synced-with-discord"],
+        });
+        createNewPost(client, payload);
+      });
   }
 }
 
@@ -175,3 +192,26 @@ function createNewPost(client, payload) {
   });
 }
 module.exports = { process };
+
+/**
+ * @param {Message} inputMessage
+ * @returns {Array[Number]} syncedIssues
+ */
+async function getSyncedIssues(inputMessage) {
+  let syncedIssues = [];
+  let messages = await inputMessage.channel.messages.fetch();
+  messages.forEach((message) => {
+    if (
+      message.author.bot ||
+      message.member.permissions.has("MANAGE_CHANNELS")
+    ) {
+      if (message.cleanContent.includes("`synced with issue #")) {
+        syncedIssues.push(
+          parseInt(message.cleanContent.split("#").pop().split("`")[0])
+        );
+      }
+    }
+  });
+  console.log(syncedIssues);
+  return syncedIssues;
+}
