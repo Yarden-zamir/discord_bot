@@ -9,6 +9,8 @@ on:
   
 jobs:
   test:
+    permissions:
+      issues: write
     env: 
       GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
       DISCORD_TOKEN: ${{ secrets.DISCORD_TOKEN }}
