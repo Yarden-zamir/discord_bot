@@ -1,4 +1,6 @@
 name: Discord events
+concurrency:
+  group: github-events-queue
 
 on:
   issue_comment: 
