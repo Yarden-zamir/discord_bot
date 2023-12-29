@@ -8,69 +8,89 @@ const { Octokit, App } = require("octokit");
 const { exit, env } = require("process");
 const { getRandomColor } = require("./utils.js");
 
-function newPostFromIssue(client, issue) {
+function newPostFromIssue(client, issue, comment) {
+  // Check if the issue is already synced with Discord
   if (issue.labels.find((label) => label.name === "synced-with-discord")) {
+    console.log("Issue already synced");
     client.destroy();
-    console.log("issue already synced");
-    exit();
+    return;
   }
+
+  // When the client is ready, start processing
   client.once(Events.ClientReady, async (readyClient) => {
-    let guild = readyClient.guilds.cache.get(env.DISCORD_SERVER_ID);
-    let channels = guild.channels.cache;
-    messageFetchPromises = [];
-    channels.forEach(async (channel) => {
-      if (
-        channel.isThread() &&
-        channel.archived === false &&
-        channel.parentId === env.DISCORD_INPUT_FORUM_CHANNEL_ID
-      ) {
-        messageFetchPromises.push(
-          channel.messages.fetch().then((messages) => {
-            messages.forEach((message) => {
-              if (
-                message.author.bot ||
-                message.author.username === env.DISCORD_ADMIN_USERNAME //need to figure out a way to check if admin instead
-              ) {
-                if (message.cleanContent.includes("`synced with issue #")) {
-                  let issueNumber = message.cleanContent
-                    .split("#")
-                    .pop()
-                    .split("`")[0];
-                  if (issueNumber === issue.number.toString()) {
-                    console.log(`syncing with issue #${issueNumber}`);
-                    let newMessage = {
-                      threadId: channel.id,
-                      embeds: [
-                        {
-                          description: payload.event.comment.body,
-                          url: payload.event.comment.html_url,
-                          color: parseInt(
-                            getRandomColor(payload.event.comment.user.login),
-                            16
-                          ),
-                          author: {
-                            name: payload.event.comment.user.login,
-                            icon_url: payload.event.comment.user.avatar_url,
-                            url: payload.event.comment.user.html_url,
-                          },
-                        },
-                      ],
-                    };
-                    let thread = readyClient.channels.cache.get(channel.id);
-                    thread.send(newMessage);
-                  }
-                }
-              }
-            });
-          })
-        );
+    const guild = readyClient.guilds.cache.get(env.DISCORD_SERVER_ID);
+    const channels = guild.channels.cache;
+    const messageFetchPromises = [];
+
+    // Fetch messages from appropriate channels
+    channels.forEach((channel) => {
+      if (isEligibleChannel(channel)) {
+        messageFetchPromises.push(processChannelMessages(channel, comment));
       }
     });
+
+    // Wait for all messages to be processed
     await Promise.all(messageFetchPromises);
-    console.log("done");
-    await client.destroy();
+    console.log("Processing complete");
+    client.destroy();
   });
 }
+
+// Helper function to determine if a channel is eligible
+function isEligibleChannel(channel) {
+  return (
+    channel.isThread() &&
+    !channel.archived &&
+    channel.parentId === env.DISCORD_INPUT_FORUM_CHANNEL_ID
+  );
+}
+
+// Function to process messages in a channel
+async function processChannelMessages(channel, comment) {
+  const messages = await channel.messages.fetch();
+  messages.forEach((message) => {
+    if (shouldSyncMessage(message, issue.number.toString())) {
+      console.log(`Syncing with issue #${issue.number}`);
+      const newMessage = createMessagePayload(comment, channel.id);
+      const thread = channel.client.channels.cache.get(channel.id);
+      thread.send(newMessage);
+    }
+  });
+}
+
+// Helper function to check if a message should be synced
+function shouldSyncMessage(message, issueNumber) {
+  return (
+    (message.author.bot || isMessageFromAdmin(message)) &&
+    message.cleanContent.includes(`\`synced with issue #${issueNumber}\``)
+  );
+}
+
+// Function to check if a message is from an admin
+function isMessageFromAdmin(message) {
+  return message.author.username === env.DISCORD_ADMIN_USERNAME;
+  // Further implementation needed to check admin status
+}
+
+// Function to create the message payload
+function createMessagePayload(comment, channel_id) {
+  return {
+    threadId: channel_id,
+    embeds: [
+      {
+        description: comment.body,
+        url: comment.html_url,
+        color: parseInt(getRandomColor(comment.user.login), 16),
+        author: {
+          name: comment.user.login,
+          icon_url: comment.user.avatar_url,
+          url: comment.user.html_url,
+        },
+      },
+    ],
+  };
+}
+
 function process(payload) {
   console.log(payload.event.action);
   const client = new Client({
@@ -84,7 +104,7 @@ function process(payload) {
   client.login(token);
 
   if (payload.event.action === "created") {
-    newPostFromIssue(client, payload.event.issue);
+    newPostFromIssue(client, payload.event.issue, payload.event.comment);
     //check if labels include "synced-with-discord"
   }
   if (payload.event.action === "opened") {
