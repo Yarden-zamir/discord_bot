@@ -86,7 +86,7 @@ function shouldSyncMessage(message, issueNumber) {
 // Function to check if a message is from an admin
 function isMessageFromAdmin(message) {
   return (
-    message.author.bot || message.member.user.id === "Yarden.zamir"
+    message.author.bot || message.author.username === "Yarden.zamir"
   );
 }
 
