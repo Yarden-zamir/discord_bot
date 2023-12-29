@@ -120,6 +120,13 @@ function process(payload) {
   if (payload.event.action === "opened") {
     console.log("here");
     createNewPost(client, payload);
+    const octokit = new Octokit({ auth: env.GITHUB_TOKEN });
+    octokit.issues.addLabels({
+      owner: env.GITHUB_OWNER,
+      repo: env.GITHUB_REPO,
+      issue_number: payload.event.issue.number,
+      labels: ["synced-with-discord"],
+    });
   }
 }
 
