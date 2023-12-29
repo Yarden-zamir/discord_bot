@@ -1,11 +1,11 @@
 // Require the necessary discord.js classes
 const { Client, Events, GatewayIntentBits } = require("discord.js");
-const token = process.env.DISCORD_TOKEN;
+const { exit, env } = require("process");
+const token = env.DISCORD_TOKEN;
 const readline = require("readline");
 
 //
 const { Octokit, App } = require("octokit");
-const { exit, env } = require("process");
 const { getRandomColor } = require("./utils.js");
 
 function newPostFromIssue(client, issue, comment) {
@@ -25,7 +25,7 @@ function newPostFromIssue(client, issue, comment) {
     // Fetch messages from appropriate channels
     channels.forEach((channel) => {
       if (isEligibleChannel(channel)) {
-        messageFetchPromises.push(processChannelMessages(channel, comment));
+        messageFetchPromises.push(processChannelMessages(channel, issue, comment));
       }
     });
 
@@ -46,7 +46,7 @@ function isEligibleChannel(channel) {
 }
 
 // Function to process messages in a channel
-async function processChannelMessages(channel, comment) {
+async function processChannelMessages(channel, issue, comment) {
   const messages = await channel.messages.fetch();
   messages.forEach((message) => {
     if (shouldSyncMessage(message, issue.number.toString())) {
@@ -144,3 +144,5 @@ function process(payload) {
     });
   }
 }
+
+module.exports = { process };
