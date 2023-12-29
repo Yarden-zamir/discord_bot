@@ -102,8 +102,7 @@ function createMessagePayload(comment, channel_id) {
   };
 }
 
-function process(payload) {
-  console.log(payload.event.action);
+function startClient(token) {
   const client = new Client({
     intents: [
       GatewayIntentBits.GuildMessages,
@@ -113,14 +112,18 @@ function process(payload) {
     ],
   });
   client.login(token);
+  return client;
+}
+function process(payload) {
+  console.log(payload.event.action);
 
   if (payload.event.action === "created") {
+    const client = startClient(token);
     newComment(client, payload.event.issue, payload.event.comment);
     //check if labels include "synced-with-discord"
   }
   if (payload.event.action === "opened") {
-    console.log("here");
-    createNewPost(client, payload);
+    const client = startClient(token);
     const octokit = new Octokit({ auth: env.GITHUB_TOKEN });
     octokit.rest.issues.addLabels({
       owner: env.TARGET_REPO.split("/")[0],
@@ -128,6 +131,7 @@ function process(payload) {
       issue_number: payload.event.issue.number,
       labels: ["synced-with-discord"],
     });
+    createNewPost(client, payload);
   }
 }
 
