@@ -8,13 +8,13 @@ const readline = require("readline");
 const { Octokit, App } = require("octokit");
 const { getRandomColor } = require("./utils.js");
 
-function newPostFromIssue(client, issue, comment) {
+function newComment(client, issue, comment) {
   // Check if the issue is already synced with Discord
-  if (issue.labels.find((label) => label.name === "synced-with-discord")) {
-    console.log("Issue already synced");
-    client.destroy();
-    return;
-  }
+//   if (issue.labels.find((label) => label.name === "synced-with-discord")) {
+//     console.log("Issue already synced");
+//     client.destroy();
+//     return;
+//   }
 
   // When the client is ready, start processing
   client.once(Events.ClientReady, async (readyClient) => {
@@ -104,7 +104,7 @@ function process(payload) {
   client.login(token);
 
   if (payload.event.action === "created") {
-    newPostFromIssue(client, payload.event.issue, payload.event.comment);
+    newComment(client, payload.event.issue, payload.event.comment);
     //check if labels include "synced-with-discord"
   }
   if (payload.event.action === "opened") {
