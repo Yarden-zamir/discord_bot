@@ -26,15 +26,14 @@ jobs:
           node-version: 20
       - env:
           GITHUB_CONTEXT: ${{ toJson(github) }}
-          DISCORD_ADMIN_USERNAME: ${{ vars.DISCORD_ADMIN_USERNAME }}
           DISCORD_SERVER_ID: ${{ vars.DISCORD_SERVER_ID }}
           DISCORD_INPUT_FORUM_CHANNEL_ID: ${{ vars.DISCORD_INPUT_FORUM_CHANNEL_ID }}
         run: |
           touch .env
           echo "DISCORD_TOKEN=$DISCORD_TOKEN" >> .env
           echo "GITHUB_TOKEN=$GITHUB_TOKEN" >> .env
-          echo "DISCORD_ADMIN_USERNAME=$DISCORD_ADMIN_USERNAME" >> .env
           echo "DISCORD_SERVER_ID=$DISCORD_SERVER_ID" >> .env
+          echo "TARGET_REPO=$TARGET_REPO" >> .env
           echo "DISCORD_INPUT_FORUM_CHANNEL_ID=$DISCORD_INPUT_FORUM_CHANNEL_ID" >> .env
           
           npm install discord.js
