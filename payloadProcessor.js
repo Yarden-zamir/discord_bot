@@ -1,5 +1,5 @@
 // Require the necessary discord.js classes
-const { Client, Events, GatewayIntentBits } = require("discord.js");
+const { PermissionsBitField, Client, Events, GatewayIntentBits } = require("discord.js");
 const { exit, env } = require("process");
 const token = env.DISCORD_TOKEN;
 const readline = require("readline");
@@ -86,7 +86,7 @@ function shouldSyncMessage(message, issueNumber) {
 // Function to check if a message is from an admin
 function isMessageFromAdmin(message) {
   return (
-    message.author.bot || message.member.permissions.has("MANAGE_CHANNELS")
+    message.author.bot || message.member.user.id === "Yarden.zamir"
   );
 }
 
