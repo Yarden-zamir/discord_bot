@@ -10,6 +10,7 @@ const { getRandomColor } = require("./utils.js");
 
 function newComment(client, issue, comment) {
   // Check if the issue is already synced with Discord
+  if (comment.user.login === "Discord-Github-Bridge") return;
   let synced = false;
   if (issue.labels.find((label) => label.name === "synced-with-discord"))
     synced = true;
