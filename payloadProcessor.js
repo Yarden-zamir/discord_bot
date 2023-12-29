@@ -17,8 +17,8 @@ function newComment(client, issue, comment) {
     //add label
     const octokit = new Octokit({ auth: env.GITHUB_TOKEN });
     octokit.rest.issues.addLabels({
-      owner: env.GITHUB_OWNER,
-      repo: env.GITHUB_REPO,
+      owner: env.TARGET_REPO.split("/")[0],
+      repo: env.TARGET_REPO.split("/")[1],
       issue_number: issue.number,
       labels: ["synced-with-discord"],
     });
@@ -122,8 +122,8 @@ function process(payload) {
     createNewPost(client, payload);
     const octokit = new Octokit({ auth: env.GITHUB_TOKEN });
     octokit.rest.issues.addLabels({
-      owner: env.GITHUB_OWNER,
-      repo: env.GITHUB_REPO,
+      owner: env.TARGET_REPO.split("/")[0],
+      repo: env.TARGET_REPO.split("/")[1],
       issue_number: payload.event.issue.number,
       labels: ["synced-with-discord"],
     });
