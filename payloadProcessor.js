@@ -10,11 +10,19 @@ const { getRandomColor } = require("./utils.js");
 
 function newComment(client, issue, comment) {
   // Check if the issue is already synced with Discord
-//   if (issue.labels.find((label) => label.name === "synced-with-discord")) {
-//     console.log("Issue already synced");
-//     client.destroy();
-//     return;
-//   }
+  let synced = false;
+  if (issue.labels.find((label) => label.name === "synced-with-discord"))
+    synced = true;
+  if (!synced) {
+    //add label
+    const octokit = new Octokit({ auth: env.GITHUB_TOKEN });
+    octokit.issues.addLabels({
+      owner: env.GITHUB_OWNER,
+      repo: env.GITHUB_REPO,
+      issue_number: issue.number,
+      labels: ["synced-with-discord"],
+    });
+  }
 
   // When the client is ready, start processing
   client.once(Events.ClientReady, async (readyClient) => {
@@ -25,7 +33,9 @@ function newComment(client, issue, comment) {
     // Fetch messages from appropriate channels
     channels.forEach((channel) => {
       if (isEligibleChannel(channel)) {
-        messageFetchPromises.push(processChannelMessages(channel, issue, comment));
+        messageFetchPromises.push(
+          processChannelMessages(channel, issue, comment)
+        );
       }
     });
 
@@ -108,41 +118,45 @@ function process(payload) {
     //check if labels include "synced-with-discord"
   }
   if (payload.event.action === "opened") {
-    client.once(Events.ClientReady, (readyClient) => {
-      console.log(
-        "client ready with channel " + env.DISCORD_INPUT_FORUM_CHANNEL_ID
-      );
-      readyClient.channels
-        .fetch(env.DISCORD_INPUT_FORUM_CHANNEL_ID)
-        .then((channel) => {
-          console.log(`New issue ${channel}`);
-          let newMessage = {
-            content: `\`synced with issue #${payload.event.issue.number}\` [follow on github](${payload.event.issue.html_url})`,
-            embeds: [
-              {
-                title: `#${payload.event.issue.number} ${payload.event.issue.title}`,
-                description: payload.event.issue.body,
-                url: payload.event.issue.html_url,
-                color: parseInt(
-                  getRandomColor(payload.event.issue.user.login),
-                  16
-                ),
-                author: {
-                  name: payload.event.issue.user.login,
-                  icon_url: payload.event.issue.user.avatar_url,
-                  url: payload.event.issue.user.html_url,
-                },
-              },
-            ],
-          };
-          channel.threads.create({
-            name: payload.event.issue.title,
-            message: newMessage,
-          });
-          client.destroy();
-        });
-    });
+    console.log("here");
+    createNewPost(client, payload);
   }
 }
 
+function createNewPost(client, payload) {
+  client.once(Events.ClientReady, (readyClient) => {
+    console.log(
+      "client ready with channel " + env.DISCORD_INPUT_FORUM_CHANNEL_ID
+    );
+    readyClient.channels
+      .fetch(env.DISCORD_INPUT_FORUM_CHANNEL_ID)
+      .then((channel) => {
+        console.log(`New issue ${channel}`);
+        let newMessage = {
+          content: `\`synced with issue #${payload.event.issue.number}\` [follow on github](${payload.event.issue.html_url})`,
+          embeds: [
+            {
+              title: `#${payload.event.issue.number} ${payload.event.issue.title}`,
+              description: payload.event.issue.body,
+              url: payload.event.issue.html_url,
+              color: parseInt(
+                getRandomColor(payload.event.issue.user.login),
+                16
+              ),
+              author: {
+                name: payload.event.issue.user.login,
+                icon_url: payload.event.issue.user.avatar_url,
+                url: payload.event.issue.user.html_url,
+              },
+            },
+          ],
+        };
+        channel.threads.create({
+          name: payload.event.issue.title,
+          message: newMessage,
+        });
+        client.destroy();
+      });
+  });
+}
 module.exports = { process };
