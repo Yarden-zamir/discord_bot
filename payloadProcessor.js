@@ -12,8 +12,10 @@ function newComment(client, issue, comment) {
   // Check if the issue is already synced with Discord
   if (comment.user.login === "Discord-Github-Bridge") {
     console.log("comment by bot, ignoring");
-    client.destroy();
-    return;
+    client.once(Events.ClientReady, async (readyClient) => {
+      client.destroy();
+      return;
+    });
   }
   let synced = false;
   if (issue.labels.find((label) => label.name === "synced-with-discord"))
