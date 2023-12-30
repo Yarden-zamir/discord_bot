@@ -1,5 +1,10 @@
 // Require the necessary discord.js classes
-const { PermissionsBitField, Client, Events, GatewayIntentBits } = require("discord.js");
+const {
+  PermissionsBitField,
+  Client,
+  Events,
+  GatewayIntentBits,
+} = require("discord.js");
 const { exit, env } = require("process");
 const token = env.DISCORD_TOKEN;
 const readline = require("readline");
@@ -64,30 +69,25 @@ function isEligibleChannel(channel) {
 
 // Function to process messages in a channel
 async function processChannelMessages(channel, issue, comment) {
-  const messages = await channel.messages.fetch();
+  const messages = await channel.messages.fetchPinned();
   messages.forEach((message) => {
     if (shouldSyncMessage(message, issue.number.toString())) {
       console.log(`Syncing with issue #${issue.number}`);
       const newMessage = createMessagePayload(comment, channel.id);
       const thread = channel.client.channels.cache.get(channel.id);
-      thread.send(newMessage);
+      thread.send(newMessage).then((message) => message.pin());
     }
   });
 }
 
 // Helper function to check if a message should be synced
 function shouldSyncMessage(message, issueNumber) {
-  return (
-    (message.author.bot || isMessageFromAdmin(message)) &&
-    message.cleanContent.includes(`\`synced with issue #${issueNumber}\``)
-  );
+  return message.cleanContent.includes(`\`synced with issue #${issueNumber}\``);
 }
 
 // Function to check if a message is from an admin
 function isMessageFromAdmin(message) {
-  return (
-    message.author.bot || message.author.username === "Yarden.zamir"
-  );
+  return message.author.bot || message.author.username === "Yarden.zamir";
 }
 
 // Function to create the message payload
