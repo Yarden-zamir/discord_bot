@@ -56,7 +56,10 @@ function processContent(newMessage) {
     if (!mentions.users.get(id)) return match;
     return `[${mentions.users.get(id).username}](${newMessage.url})`;
   });
-
+  newMessage.attachments.forEach((attachment) => {
+    content += `![${attachment.name}](${attachment.url})`;
+  });
+  
   return content;
 }
 function start() {
