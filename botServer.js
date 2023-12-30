@@ -1,5 +1,11 @@
 // Require the necessary discord.js classes
-const { Client, Events, GatewayIntentBits, Message } = require("discord.js");
+const {
+  PermissionsBitField,
+  Client,
+  Events,
+  GatewayIntentBits,
+  Message,
+} = require("discord.js");
 const token = process.env.DISCORD_TOKEN;
 const readline = require("readline");
 
@@ -17,17 +23,12 @@ function isInputChannel(channel) {
  */
 async function getSyncedIssues(inputMessage) {
   let syncedIssues = [];
-  let messages = await inputMessage.channel.messages.fetch();
+  let messages = await inputMessage.channel.messages.fetchPinned();
   messages.forEach((message) => {
-    if (
-      message.author.bot ||
-      message.member.permissions.has("MANAGE_CHANNELS")
-    ) {
-      if (message.cleanContent.includes("`synced with issue #")) {
-        syncedIssues.push(
-          parseInt(message.cleanContent.split("#").pop().split("`")[0])
-        );
-      }
+    if (message.cleanContent.includes("`synced with issue #")) {
+      syncedIssues.push(
+        parseInt(message.cleanContent.split("#").pop().split("`")[0])
+      );
     }
   });
   console.log(syncedIssues);
@@ -110,6 +111,8 @@ function start() {
             },
           },
         ],
+      }).then((message) => {
+        message.pin();
       });
     });
   });
