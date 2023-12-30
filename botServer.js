@@ -35,6 +35,30 @@ async function getSyncedIssues(inputMessage) {
   return syncedIssues;
 }
 
+/**
+ * @param {Message} newMessage
+ */
+function processContent(newMessage) {
+  //replace things like <#1185339252842700961>
+  //with https://discord.com/channels/${env.DISCORD_SERVER_ID}/1188080947267125318
+  //and <@1185339252842700961> with @username
+
+  let content = newMessage.content;
+  let mentions = newMessage.mentions;
+  
+  content = content.replace(/<#(\d+)>/g, (match, id) => {
+    if (!mentions.channels.get(id)) return match;
+    return `[${mentions.channels.get(id).name}](https://discord.com/channels/${
+      env.DISCORD_SERVER_ID
+    }/${id})`;
+  });
+  content = content.replace(/<@(\d+)>/g, (match, id) => {
+    if (!mentions.users.get(id)) return match;
+    return `[${mentions.users.get(id).username}](${newMessage.url})`;
+  });
+
+  return content;
+}
 function start() {
   const client = new Client({
     intents: [
@@ -60,7 +84,9 @@ function start() {
           newMessage.author.avatarURL();
           content = `[<img src="${newMessage.author.avatarURL()}" width="15" height="15" center=true/> **${
             newMessage.author.username
-          }** on Discord says](${newMessage.url}) \n> ${newMessage.content}`;
+          }** on Discord says](${newMessage.url}) \n> ${processContent(
+            newMessage
+          )}`;
           octokit.rest.issues.createComment({
             owner: env.TARGET_REPO.split("/")[0],
             repo: env.TARGET_REPO.split("/")[1],
@@ -94,26 +120,28 @@ function start() {
         body: message.content,
         labels: ["synced-with-discord"],
       });
-      thread.send({
-        content: `
+      thread
+        .send({
+          content: `
         \`synced with issue #${issue.data.number}\` [follow on github](${issue.data.html_url})
         `,
-        embeds: [
-          {
-            title: `#${issue.data.number} ${issue.data.title}`,
-            description: issue.data.body,
-            url: issue.data.html_url,
-            color: parseInt(getRandomColor(message.author.username), 16),
-            author: {
-              name: message.author.username,
-              icon_url: message.author.avatarURL(),
+          embeds: [
+            {
+              title: `#${issue.data.number} ${issue.data.title}`,
+              description: issue.data.body,
               url: issue.data.html_url,
+              color: parseInt(getRandomColor(message.author.username), 16),
+              author: {
+                name: message.author.username,
+                icon_url: message.author.avatarURL(),
+                url: issue.data.html_url,
+              },
             },
-          },
-        ],
-      }).then((message) => {
-        message.pin();
-      });
+          ],
+        })
+        .then((message) => {
+          message.pin();
+        });
     });
   });
   client.login(token);
