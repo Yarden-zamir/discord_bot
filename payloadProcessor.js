@@ -121,7 +121,7 @@ function startClient(token) {
   client.login(token);
   return client;
 }
-function process(payload) {
+async function process(payload) {
   console.log(payload.event.action);
 
   if (payload.event.action === "created") {
@@ -130,69 +130,64 @@ function process(payload) {
     //check if labels include "synced-with-discord"
   }
   if (payload.event.action === "opened") {
-    const client = startClient(token);
-    const octokit = new Octokit({ auth: env.GITHUB_TOKEN });
-    let labels = octokit.rest.issues
-      .get({
-        owner: env.TARGET_REPO.split("/")[0],
-        repo: env.TARGET_REPO.split("/")[1],
-        issue_number: payload.event.issue.number,
-      })
-      .then((issue) => {
-        if (
-          issue.data.labels.find(
-            (label) => label.name === "synced-with-discord"
-          )
-        ) {
-          console.log("issue already synced");
-          client.destroy();
-          return;
-        }
-        octokit.rest.issues.addLabels({
+    startClient(token).once(Events.ClientReady, async (client) => {
+      const octokit = new Octokit({ auth: env.GITHUB_TOKEN });
+      let labels = octokit.rest.issues
+        .get({
           owner: env.TARGET_REPO.split("/")[0],
           repo: env.TARGET_REPO.split("/")[1],
           issue_number: payload.event.issue.number,
-          labels: ["synced-with-discord"],
+        })
+        .then((issue) => {
+          if (
+            issue.data.labels.find(
+              (label) => label.name === "synced-with-discord"
+            )
+          ) {
+            console.log("issue already tagged as synced on github");
+
+            client.destroy();
+            return;
+          }
+          octokit.rest.issues.addLabels({
+            owner: env.TARGET_REPO.split("/")[0],
+            repo: env.TARGET_REPO.split("/")[1],
+            issue_number: payload.event.issue.number,
+            labels: ["synced-with-discord"],
+          });
+          createNewPost(client, payload);
         });
-        createNewPost(client, payload);
-      });
+    });
   }
 }
 
 function createNewPost(client, payload) {
-  client.once(Events.ClientReady, (readyClient) => {
-    console.log(
-      "client ready with channel " + env.DISCORD_INPUT_FORUM_CHANNEL_ID
-    );
-    readyClient.channels
-      .fetch(env.DISCORD_INPUT_FORUM_CHANNEL_ID)
-      .then((channel) => {
-        console.log(`New issue ${channel}`);
-        let newMessage = {
-          content: `\`synced with issue #${payload.event.issue.number}\` [follow on github](${payload.event.issue.html_url})`,
-          embeds: [
-            {
-              title: `#${payload.event.issue.number} ${payload.event.issue.title}`,
-              description: payload.event.issue.body,
-              url: payload.event.issue.html_url,
-              color: parseInt(
-                getRandomColor(payload.event.issue.user.login),
-                16
-              ),
-              author: {
-                name: payload.event.issue.user.login,
-                icon_url: payload.event.issue.user.avatar_url,
-                url: payload.event.issue.user.html_url,
-              },
-            },
-          ],
-        };
-        channel.threads.create({
-          name: payload.event.issue.title,
-          message: newMessage,
-        });
-        client.destroy();
-      });
+  console.log(
+    "client ready with channel " + env.DISCORD_INPUT_FORUM_CHANNEL_ID
+  );
+  client.channels.fetch(env.DISCORD_INPUT_FORUM_CHANNEL_ID).then((channel) => {
+    console.log(`New issue ${channel}`);
+    let newMessage = {
+      content: `\`synced with issue #${payload.event.issue.number}\` [follow on github](${payload.event.issue.html_url})`,
+      embeds: [
+        {
+          title: `#${payload.event.issue.number} ${payload.event.issue.title}`,
+          description: payload.event.issue.body,
+          url: payload.event.issue.html_url,
+          color: parseInt(getRandomColor(payload.event.issue.user.login), 16),
+          author: {
+            name: payload.event.issue.user.login,
+            icon_url: payload.event.issue.user.avatar_url,
+            url: payload.event.issue.user.html_url,
+          },
+        },
+      ],
+    };
+    channel.threads.create({
+      name: payload.event.issue.title,
+      message: newMessage,
+    });
+    client.destroy();
   });
 }
 module.exports = { process };
