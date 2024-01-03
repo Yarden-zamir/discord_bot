@@ -17,6 +17,12 @@ function isInputChannel(channel) {
   return channel.parentId === env.DISCORD_INPUT_FORUM_CHANNEL_ID;
 }
 
+let app = require('express')();
+app.use('/healthcheck', require('express-healthcheck')());
+const PORT = process.env.PORT || 8080;
+app.listen(PORT, () => {
+    console.log(`Server is running on port ${PORT}`);
+});
 /**
  * @param {Message} inputMessage
  * @returns {Array[Number]} syncedIssues
