@@ -8,6 +8,14 @@ const {
 } = require("discord.js");
 const token = process.env.DISCORD_TOKEN;
 const readline = require("readline");
+const { setGlobalDispatcher, Agent, Pool } = require("undici");
+
+setGlobalDispatcher(
+  new Agent({
+    connect: { rejectUnauthorized: false, timeout: 60_000 },
+    factory: (origin) => new Pool(origin, { connections: 128 }),
+  })
+); //this might fix possible connection timeout issues
 
 //
 const { Octokit, App } = require("octokit");
@@ -17,11 +25,11 @@ function isInputChannel(channel) {
   return channel.parentId === env.DISCORD_INPUT_FORUM_CHANNEL_ID;
 }
 
-let app = require('express')();
-app.use('/healthcheck', require('express-healthcheck')());
+let app = require("express")();
+app.use("/healthcheck", require("express-healthcheck")());
 const PORT = process.env.PORT || 8080;
 app.listen(PORT, () => {
-    console.log(`Server is running on port ${PORT}`);
+  console.log(`Server is running on port ${PORT}`);
 });
 /**
  * @param {Message} inputMessage
@@ -47,7 +55,7 @@ async function getSyncedIssues(inputMessage) {
 function processContent(newMessage) {
   let content = newMessage.content;
   let mentions = newMessage.mentions;
-  
+
   //channel parsing
   content = content.replace(/<#(\d+)>/g, (match, id) => {
     if (!mentions.channels.get(id)) return match;
@@ -60,7 +68,7 @@ function processContent(newMessage) {
     if (!mentions.users.get(id)) return match;
     return `[${mentions.users.get(id).username}](${newMessage.url})`;
   });
-  //@role parsing
+  //role parsing
   content = content.replace(/<@&(\d+)>/g, (match, id) => {
     if (!mentions.roles.get(id)) return match;
     return `[${mentions.roles.get(id).name}](${newMessage.url})`;
@@ -68,7 +76,7 @@ function processContent(newMessage) {
   newMessage.attachments.forEach((attachment) => {
     content += `![${attachment.name}](${attachment.url})`;
   });
-  
+
   return content;
 }
 function start() {
@@ -131,9 +139,7 @@ function start() {
         title: message.channel.name,
         body: `[<img src="${message.author.avatarURL()}" width="15" height="15" center=true/> **${
           message.author.username
-        }** on Discord says](${message.url}) \n> ${processContent(
-          message
-        )}`,
+        }** on Discord says](${message.url}) \n> ${processContent(message)}`,
         labels: ["synced-with-discord"],
       });
       thread
