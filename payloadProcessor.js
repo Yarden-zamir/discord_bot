@@ -13,7 +13,7 @@ const readline = require("readline");
 const { Octokit, App } = require("octokit");
 const { getRandomColor } = require("./utils.js");
 
-function newComment(client, issue, comment) {
+async function newComment(client, issue, comment) {
   // Check if the issue is already synced with Discord
   if (comment.user.login === "Discord-Github-Bridge") {
     console.log("comment by bot, ignoring");
@@ -34,28 +34,27 @@ function newComment(client, issue, comment) {
       issue_number: issue.number,
       labels: ["synced-with-discord"],
     });
+    console.log("Tagged as synced with discord");
   }
 
   // When the client is ready, start processing
-  client.once(Events.ClientReady, async (readyClient) => {
-    const guild = readyClient.guilds.cache.get(env.DISCORD_SERVER_ID);
-    const channels = guild.channels.cache;
-    const messageFetchPromises = [];
+  const guild = client.guilds.cache.get(env.DISCORD_SERVER_ID);
+  const channels = guild.channels.cache;
+  const messageFetchPromises = [];
 
-    // Fetch messages from appropriate channels
-    channels.forEach((channel) => {
-      if (isEligibleChannel(channel)) {
-        messageFetchPromises.push(
-          processChannelMessages(channel, issue, comment)
-        );
-      }
-    });
-
-    // Wait for all messages to be processed
-    await Promise.all(messageFetchPromises);
-    console.log("Processing complete");
-    client.destroy();
+  // Fetch messages from appropriate channels
+  channels.forEach((channel) => {
+    if (isEligibleChannel(channel)) {
+      messageFetchPromises.push(
+        processChannelMessages(channel, issue, comment)
+      );
+    }
   });
+
+  // Wait for all messages to be processed
+  await Promise.all(messageFetchPromises);
+  console.log("Processing complete");
+  client.destroy();
 }
 
 // Helper function to determine if a channel is eligible
@@ -75,7 +74,7 @@ async function processChannelMessages(channel, issue, comment) {
       console.log(`Syncing with issue #${issue.number}`);
       const newMessage = createMessagePayload(comment, channel.id);
       const thread = channel.client.channels.cache.get(channel.id);
-      thread.send(newMessage).then((message) => message.pin());
+      thread.send(newMessage); //no need to pin because this is a regular message
     }
   });
 }
@@ -125,8 +124,10 @@ async function process(payload) {
   console.log(payload.event.action);
 
   if (payload.event.action === "created") {
-    const client = startClient(token);
+    startClient(token).once(Events.ClientReady, async (client) => {
     newComment(client, payload.event.issue, payload.event.comment);
+    
+    });
     //check if labels include "synced-with-discord"
   }
   if (payload.event.action === "opened") {
