@@ -126,7 +126,11 @@ function start() {
         owner: env.TARGET_REPO.split("/")[0],
         repo: env.TARGET_REPO.split("/")[1],
         title: message.channel.name,
-        body: message.content,
+        body: `[<img src="${message.author.avatarURL()}" width="15" height="15" center=true/> **${
+          message.author.username
+        }** on Discord says](${message.url}) \n> ${processContent(
+          message
+        )}`,
         labels: ["synced-with-discord"],
       });
       thread
@@ -137,7 +141,7 @@ function start() {
           embeds: [
             {
               title: `#${issue.data.number} ${issue.data.title}`,
-              description: issue.data.body,
+              description: message.content,
               url: issue.data.html_url,
               color: parseInt(getRandomColor(message.author.username), 16),
               author: {
