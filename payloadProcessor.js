@@ -187,6 +187,8 @@ function createNewPost(client, payload) {
     channel.threads.create({
       name: payload.event.issue.title,
       message: newMessage,
+    }).then((thread) => {
+      thread.pin();
     });
     client.destroy();
   });
