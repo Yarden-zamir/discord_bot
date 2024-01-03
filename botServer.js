@@ -48,15 +48,22 @@ function processContent(newMessage) {
   let content = newMessage.content;
   let mentions = newMessage.mentions;
   
+  //channel parsing
   content = content.replace(/<#(\d+)>/g, (match, id) => {
     if (!mentions.channels.get(id)) return match;
     return `[${mentions.channels.get(id).name}](https://discord.com/channels/${
       env.DISCORD_SERVER_ID
     }/${id})`;
   });
+  //person parsing
   content = content.replace(/<@(\d+)>/g, (match, id) => {
     if (!mentions.users.get(id)) return match;
     return `[${mentions.users.get(id).username}](${newMessage.url})`;
+  });
+  //@role parsing
+  content = content.replace(/<@&(\d+)>/g, (match, id) => {
+    if (!mentions.roles.get(id)) return match;
+    return `[${mentions.roles.get(id).name}](${newMessage.url})`;
   });
   newMessage.attachments.forEach((attachment) => {
     content += `![${attachment.name}](${attachment.url})`;
