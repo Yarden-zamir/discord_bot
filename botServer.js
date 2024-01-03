@@ -45,10 +45,6 @@ async function getSyncedIssues(inputMessage) {
  * @param {Message} newMessage
  */
 function processContent(newMessage) {
-  //replace things like <#1185339252842700961>
-  //with https://discord.com/channels/${env.DISCORD_SERVER_ID}/1188080947267125318
-  //and <@1185339252842700961> with @username
-
   let content = newMessage.content;
   let mentions = newMessage.mentions;
   
