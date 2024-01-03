@@ -162,11 +162,14 @@ async function process(payload) {
   }
 }
 
+/**
+ * @param {Client} client The client to use
+ */
 function createNewPost(client, payload) {
   console.log(
     "client ready with channel " + env.DISCORD_INPUT_FORUM_CHANNEL_ID
   );
-  client.channels.fetch(env.DISCORD_INPUT_FORUM_CHANNEL_ID).then((channel) => {
+  client.channels.fetch(env.DISCORD_INPUT_FORUM_CHANNEL_ID).then(async (channel) => {
     console.log(`New issue ${channel}`);
     let newMessage = {
       content: `\`synced with issue #${payload.event.issue.number}\` [follow on github](${payload.event.issue.html_url})`,
@@ -184,13 +187,15 @@ function createNewPost(client, payload) {
         },
       ],
     };
-    channel.threads.create({
+    
+    let thread = await channel.threads.create({
       name: payload.event.issue.title,
       message: newMessage,
-    }).then((thread) => {
-      thread.pin();
+    })
+    thread.fetchStarterMessage().then((message) => {
+      message.pin();
+      client.destroy();
     });
-    client.destroy();
   });
 }
 module.exports = { process };
