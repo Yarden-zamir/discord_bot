@@ -35,8 +35,8 @@ async function newComment(client, payload) {
       labels: ["synced-with-discord"],
     });
     console.log("Tagged as synced with discord");
-    createNewPost(client, payload)
-    return;
+    createNewPost(client, payload, false)
+    await new Promise(r => setTimeout(r, 2000));
   }
 
   const guild = client.guilds.cache.get(env.DISCORD_SERVER_ID);
@@ -160,7 +160,7 @@ async function process(payload) {
 /**
  * @param {Client} client The client to use
  */
-function createNewPost(client, payload) {
+function createNewPost(client, payload, destroyClient = true) {
   console.log(
     "client ready with channel " + env.DISCORD_INPUT_FORUM_CHANNEL_ID
   );
@@ -189,7 +189,9 @@ function createNewPost(client, payload) {
     })
     thread.fetchStarterMessage().then((message) => {
       message.pin();
-      client.destroy();
+      if (destroyClient){
+        client.destroy();
+      }
     });
   });
 }
