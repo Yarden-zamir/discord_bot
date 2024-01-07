@@ -13,7 +13,9 @@ const readline = require("readline");
 const { Octokit, App } = require("octokit");
 const { getRandomColor } = require("./utils.js");
 
-async function newComment(client, issue, comment) {
+async function newComment(client, payload) {
+  let issue = payload.event.issue
+  let comment = payload.event.comment;
   // Check if the issue is already synced with Discord
   if (comment.user.login === "Discord-Github-Bridge") {
     console.log("comment by bot, ignoring");
@@ -33,9 +35,10 @@ async function newComment(client, issue, comment) {
       labels: ["synced-with-discord"],
     });
     console.log("Tagged as synced with discord");
+    createNewPost(client, payload)
+    return;
   }
 
-  // When the client is ready, start processing
   const guild = client.guilds.cache.get(env.DISCORD_SERVER_ID);
   const channels = guild.channels.cache;
   const messageFetchPromises = [];
@@ -64,7 +67,6 @@ function isEligibleChannel(channel) {
   );
 }
 
-// Function to process messages in a channel
 async function processChannelMessages(channel, issue, comment) {
   const messages = await channel.messages.fetchPinned();
   messages.forEach((message) => {
@@ -80,11 +82,6 @@ async function processChannelMessages(channel, issue, comment) {
 // Helper function to check if a message should be synced
 function shouldSyncMessage(message, issueNumber) {
   return message.cleanContent.includes(`\`synced with issue #${issueNumber}\``);
-}
-
-// Function to check if a message is from an admin
-function isMessageFromAdmin(message) {
-  return message.author.bot || message.author.username === "Yarden.zamir";
 }
 
 // Function to create the message payload
@@ -123,7 +120,7 @@ async function process(payload) {
 
   if (payload.event.action === "created") {
     startClient(token).once(Events.ClientReady, async (client) => {
-    newComment(client, payload.event.issue, payload.event.comment);
+    newComment(client, payload);
     
     });
     //check if labels include "synced-with-discord"
