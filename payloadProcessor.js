@@ -128,11 +128,12 @@ async function process(payload) {
   if (payload.event.action === "opened") {
     startClient(token).once(Events.ClientReady, async (client) => {
       const octokit = new Octokit({ auth: env.GITHUB_TOKEN });
+      let issue_number = payload.event.issue?.number || payload.event.number;
       let labels = octokit.rest.issues
         .get({
           owner: env.TARGET_REPO.split("/")[0],
           repo: env.TARGET_REPO.split("/")[1],
-          issue_number: payload.event.issue?.number || payload.event.number,
+          issue_number: issue_number,
         })
         .then((issue) => {
           if (
@@ -148,7 +149,7 @@ async function process(payload) {
           octokit.rest.issues.addLabels({
             owner: env.TARGET_REPO.split("/")[0],
             repo: env.TARGET_REPO.split("/")[1],
-            issue_number: payload.event.issue.number,
+            issue_number: issue_number,
             labels: ["synced-with-discord"],
           });
           createNewPost(client, payload);
@@ -165,26 +166,32 @@ function createNewPost(client, payload, destroyClient = true) {
     "client ready with channel " + env.DISCORD_INPUT_FORUM_CHANNEL_ID
   );
   client.channels.fetch(env.DISCORD_INPUT_FORUM_CHANNEL_ID).then(async (channel) => {
+    let issue_number = payload.event.issue?.number || payload.event.number;
+    let issue = await new Octokit({ auth: env.GITHUB_TOKEN }).rest.issues.get({
+      owner: env.TARGET_REPO.split("/")[0],
+      repo: env.TARGET_REPO.split("/")[1],
+      issue_number: issue_number,
+    });
     console.log(`New issue ${channel}`);
     let newMessage = {
-      content: `\`synced with issue #${payload.event.issue.number}\` [follow on github](${payload.event.issue.html_url})`,
+      content: `\`synced with issue #${issue_number}\` [follow on github](${issue.data.html_url})`,
       embeds: [
         {
-          title: `#${payload.event.issue.number} ${payload.event.issue.title}`,
-          description: payload.event.issue.body,
-          url: payload.event.issue.html_url,
-          color: parseInt(getRandomColor(payload.event.issue.user.login), 16),
+          title: `#${issue.data.number} ${issue.data.title}`,
+          description: issue.data.body || "",
+          url: issue.data.html_url,
+          color: parseInt(getRandomColor(issue.data.user.login), 16),
           author: {
-            name: payload.event.issue.user.login,
-            icon_url: payload.event.issue.user.avatar_url,
-            url: payload.event.issue.user.html_url,
+            name: issue.data.user.login,
+            icon_url: issue.data.user.avatar_url,
+            url: issue.data.user.html_url,
           },
         },
       ],
     };
     
     let thread = await channel.threads.create({
-      name: payload.event.issue.title,
+      name: issue.data.title,
       message: newMessage,
     })
     thread.fetchStarterMessage().then((message) => {
