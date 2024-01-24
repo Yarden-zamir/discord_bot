@@ -132,7 +132,7 @@ async function process(payload) {
         .get({
           owner: env.TARGET_REPO.split("/")[0],
           repo: env.TARGET_REPO.split("/")[1],
-          issue_number: payload.event.issue.number,
+          issue_number: payload.event.issue?.number || payload.event.number,
         })
         .then((issue) => {
           if (
