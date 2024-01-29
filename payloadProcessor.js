@@ -12,7 +12,9 @@ const readline = require("readline");
 //
 const { Octokit, App } = require("octokit");
 const { getRandomColor } = require("./utils.js");
-const octokit = new Octokit({ auth: env.GITHUB_TOKEN });
+const { ok } = require("assert");
+const octokit = new Octokit({
+  auth: env.GITHUB_TOKEN });
 
 async function newComment(client, payload) {
   let issue = payload.event.issue
@@ -28,13 +30,22 @@ async function newComment(client, payload) {
     synced = true;
   if (!synced) {
     //add label
-    // let issue_number = payload.event.issue?.number || payload.event.number;
-    await octokit.rest.issues.addLabels({
-      owner: env.TARGET_REPO.split("/")[0],
-      repo: env.TARGET_REPO.split("/")[1],
-      issue_number: 59,
-      labels: ["synced-with-discord"],
-    });
+    // let issue_number = payload.event.issue?.number || payload.event.number;  
+    await octokit.request(
+      `POST /repos/${env.TARGET_REPO}/issues/${issue.number}/labels`,
+      {
+        owner: env.TARGET_REPO.split("/")[0],
+        repo: env.TARGET_REPO.split("/")[1],
+        issue_number: issue.number,
+        labels: ["synced-with-discord"],
+      }
+    );
+    // await octokit.rest.issues.addLabels({
+    //   owner: env.TARGET_REPO.split("/")[0],
+    //   repo: env.TARGET_REPO.split("/")[1],
+    //   issue_number: 59,
+    //   labels: ["synced-with-discord"],
+    // });
     console.log("Tagged as synced with discord");
     createNewPost(client, payload, false)
     await new Promise(r => setTimeout(r, 2000));
