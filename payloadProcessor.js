@@ -28,7 +28,7 @@ async function newComment(client, payload) {
     synced = true;
   if (!synced) {
     //add label
-    octokit.rest.issues.addLabels({
+    await octokit.rest.issues.addLabels({
       owner: env.TARGET_REPO.split("/")[0],
       repo: env.TARGET_REPO.split("/")[1],
       issue_number: issue.number,
