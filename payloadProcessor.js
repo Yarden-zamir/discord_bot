@@ -28,10 +28,11 @@ async function newComment(client, payload) {
     synced = true;
   if (!synced) {
     //add label
+    // let issue_number = payload.event.issue?.number || payload.event.number;
     await octokit.rest.issues.addLabels({
       owner: env.TARGET_REPO.split("/")[0],
       repo: env.TARGET_REPO.split("/")[1],
-      issue_number: issue.number,
+      issue_number: 59,
       labels: ["synced-with-discord"],
     });
     console.log("Tagged as synced with discord");
