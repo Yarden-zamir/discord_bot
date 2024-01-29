@@ -12,6 +12,7 @@ const readline = require("readline");
 //
 const { Octokit, App } = require("octokit");
 const { getRandomColor } = require("./utils.js");
+const octokit = new Octokit({ auth: env.GITHUB_TOKEN });
 
 async function newComment(client, payload) {
   let issue = payload.event.issue
@@ -27,7 +28,6 @@ async function newComment(client, payload) {
     synced = true;
   if (!synced) {
     //add label
-    const octokit = new Octokit({ auth: env.GITHUB_TOKEN });
     octokit.rest.issues.addLabels({
       owner: env.TARGET_REPO.split("/")[0],
       repo: env.TARGET_REPO.split("/")[1],
@@ -127,9 +127,8 @@ async function process(payload) {
   }
   if (payload.event.action === "opened") {
     startClient(token).once(Events.ClientReady, async (client) => {
-      const octokit = new Octokit({ auth: env.GITHUB_TOKEN });
       let issue_number = payload.event.issue?.number || payload.event.number;
-      let labels = octokit.rest.issues
+      octokit.rest.issues
         .get({
           owner: env.TARGET_REPO.split("/")[0],
           repo: env.TARGET_REPO.split("/")[1],
