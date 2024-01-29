@@ -38,6 +38,9 @@ async function newComment(client, payload) {
         repo: env.TARGET_REPO.split("/")[1],
         issue_number: issue.number,
         labels: ["synced-with-discord"],
+        headers: {
+          'X-GitHub-Api-Version': '2022-11-28'
+        }
       }
     );
     // await octokit.rest.issues.addLabels({
