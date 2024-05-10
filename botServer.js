@@ -121,6 +121,8 @@ function start() {
   client.on(Events.ThreadCreate, async (thread) => {
     //handle new thread/post
     console.log("thread created");
+    // sleep for a bit to make sure the thread is created
+    await new Promise(r => setTimeout(r, 500));
     thread.fetchStarterMessage().then(async (message) => {
       if (message.channel.parentId !== env.DISCORD_INPUT_FORUM_CHANNEL_ID)
         return;
