@@ -17,7 +17,7 @@ async function newComment(client, payload) {
   let issue = payload.event.issue
   let comment = payload.event.comment;
   // Check if the issue is already synced with Discord
-  if (comment.user.login === "Discord-Github-Bridge") {
+  if (comment.user.login === "Discord-Github-Bridge" || comment.body.includes("** on Discord says]")) {
     console.log("comment by bot, ignoring");
     client.destroy();
     return;
